@@ -3,6 +3,7 @@ package mutation
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/go-logr/logr"
 	kyvernov1 "github.com/kyverno/kyverno/api/kyverno/v1"
@@ -90,6 +91,8 @@ func getTargets(ctx context.Context, client engineapi.Client, target kyvernov1.R
 		namespace = policy.GetNamespace()
 	}
 	group, version, kind, subresource := kubeutils.ParseKindSelector(target.APIVersion + "/" + target.Kind)
+	log.Printf("group: %v, version: %v, kind: %v, subresource: %v", group, version, kind, subresource)
+
 	resources, err := client.GetResources(ctx, group, version, kind, subresource, namespace, name)
 	if err != nil {
 		return nil, err

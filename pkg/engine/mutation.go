@@ -30,7 +30,8 @@ func (e *engine) mutate(
 	defer policyContext.JSONContext().Restore()
 
 	for _, rule := range autogen.ComputeRules(policy, "") {
-		log.Println("entering loop")
+		log.Printf("bool values %t, %t, %t", !policyContext.AdmissionOperation(), rule.HasMutateExisting(), !rule.HasMutate())
+
 		startTime := time.Now()
 		logger := internal.LoggerWithRule(logger, rule)
 		handlerFactory := func() (handlers.Handler, error) {
@@ -43,7 +44,6 @@ func (e *engine) mutate(
 			log.Println("creating a handler with no client")
 			return mutation.NewMutateResourceHandler()
 		}
-		handlerFactory()
 		resource, ruleResp := e.invokeRuleHandler(
 			ctx,
 			logger,

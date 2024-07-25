@@ -41,7 +41,6 @@ func (e *engine) mutate(
 			if !policyContext.AdmissionOperation() && rule.HasMutateExisting() {
 				return mutation.NewMutateExistingHandler(e.client)
 			}
-			log.Println("creating a handler with no client")
 			return mutation.NewMutateResourceHandler()
 		}
 		resource, ruleResp := e.invokeRuleHandler(

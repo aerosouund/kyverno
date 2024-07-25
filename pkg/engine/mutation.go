@@ -3,7 +3,6 @@ package engine
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -31,8 +30,6 @@ func (e *engine) mutate(
 	defer policyContext.JSONContext().Restore()
 
 	for _, rule := range autogen.ComputeRules(policy, "") {
-		log.Printf("bool values %t, %t, %t", !policyContext.AdmissionOperation(), rule.HasMutateExisting(), !rule.HasMutate())
-
 		startTime := time.Now()
 		logger := internal.LoggerWithRule(logger, rule)
 		handlerFactory := func() (handlers.Handler, error) {

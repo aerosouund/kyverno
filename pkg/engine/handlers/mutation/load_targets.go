@@ -97,6 +97,7 @@ func getTargets(ctx context.Context, client engineapi.Client, target kyvernov1.R
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("reached resources")
 	targetObjects := make([]resourceInfo, 0, len(resources))
 	for _, resource := range resources {
 		targetObjects = append(targetObjects, resourceInfo{

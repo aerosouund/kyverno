@@ -2,7 +2,7 @@ package engine
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -39,7 +39,7 @@ func (e *engine) mutate(
 			if !policyContext.AdmissionOperation() && rule.HasMutateExisting() {
 				return mutation.NewMutateExistingHandler(e.client)
 			}
-			fmt.Println("creating a handler with no client")
+			log.Println("creating a handler with no client")
 			return mutation.NewMutateResourceHandler()
 		}
 		resource, ruleResp := e.invokeRuleHandler(

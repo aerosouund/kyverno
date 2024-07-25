@@ -93,11 +93,12 @@ func getTargets(ctx context.Context, client engineapi.Client, target kyvernov1.R
 	group, version, kind, subresource := kubeutils.ParseKindSelector(target.APIVersion + "/" + target.Kind)
 	log.Printf("group: %v, version: %v, kind: %v, subresource: %v", group, version, kind, subresource)
 
+	// client is the nil pointer
 	resources, err := client.GetResources(ctx, group, version, kind, subresource, namespace, name)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("reached resources")
+
 	targetObjects := make([]resourceInfo, 0, len(resources))
 	for _, resource := range resources {
 		targetObjects = append(targetObjects, resourceInfo{

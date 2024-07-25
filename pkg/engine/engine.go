@@ -52,7 +52,6 @@ func NewEngine(
 	contextLoader engineapi.ContextLoaderFactory,
 	exceptionSelector engineapi.PolicyExceptionSelector,
 ) engineapi.Engine {
-	client.CanI(context.TODO(), "", "", "", "", "")
 	meter := otel.GetMeterProvider().Meter(metrics.MeterName)
 	resultCounter, err := meter.Int64Counter(
 		"kyverno_policy_results",

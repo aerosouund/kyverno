@@ -12,6 +12,7 @@ import (
 	"github.com/kyverno/kyverno/pkg/engine/handlers"
 	"github.com/kyverno/kyverno/pkg/engine/handlers/mutation"
 	"github.com/kyverno/kyverno/pkg/engine/internal"
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -42,6 +43,7 @@ func (e *engine) mutate(
 				}
 				return mutation.NewMutateExistingHandler(e.client)
 			}
+			logrus.Info("admission operation")
 			return mutation.NewMutateResourceHandler()
 		}
 		resource, ruleResp := e.invokeRuleHandler(

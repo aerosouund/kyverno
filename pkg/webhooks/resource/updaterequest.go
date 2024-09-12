@@ -56,6 +56,7 @@ func (h *resourceHandlers) handleMutateExisting(ctx context.Context, logger logr
 		var skipped []string
 		for _, rule := range autogen.ComputeRules(policy, "") {
 			if request.AdmissionRequest.Operation == admissionv1.Delete && !webhookutils.MatchDeleteOperation(rule) {
+				logger.V(2).Info("ammar skipping rule")
 				skipped = append(skipped, rule.Name)
 			}
 		}

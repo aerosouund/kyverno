@@ -359,6 +359,7 @@ func substituteVariablesIfAny(log logr.Logger, ctx context.EvalInterface, vr Var
 
 				log.V(3).Info("variable substituted", "variable", v, "value", substitutedVar, "path", data.Path)
 
+				panic("ammar panic")
 				if originalPattern == v {
 					return substitutedVar, nil
 				}

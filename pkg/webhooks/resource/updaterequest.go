@@ -14,6 +14,7 @@ import (
 	"github.com/kyverno/kyverno/pkg/event"
 	datautils "github.com/kyverno/kyverno/pkg/utils/data"
 	"github.com/kyverno/kyverno/pkg/webhooks/resource/generation"
+	webhookutils "github.com/kyverno/kyverno/pkg/webhooks/utils"
 	admissionv1 "k8s.io/api/admission/v1"
 )
 
@@ -40,10 +41,10 @@ func (h *resourceHandlers) handleMutateExisting(ctx context.Context, logger logr
 		// skip rules that don't specify the DELETE operation in case the admission request is of type DELETE
 		var skipped []string
 		for _, rule := range autogen.ComputeRules(policy) {
-			logger.V(5).Info(rule.Name)
-			// if request.Operation == admissionv1.Delete && !webhookutils.MatchDeleteOperation(rule) {
-			// 	skipped = append(skipped, rule.Name)
-			// }
+			if request.Operation == admissionv1.Delete && !webhookutils.MatchDeleteOperation(rule) {
+				logger.V(2).Info("ammar skipping rules")
+				skipped = append(skipped, rule.Name)
+			}
 		}
 
 		var rules []engineapi.RuleResponse

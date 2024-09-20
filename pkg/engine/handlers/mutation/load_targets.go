@@ -82,7 +82,6 @@ func resolveSpec(i int, target kyvernov1.TargetResourceSpec, ctx engineapi.Polic
 }
 
 func getTargets(ctx context.Context, client engineapi.Client, target kyvernov1.ResourceSpec, policyCtx engineapi.PolicyContext) ([]resourceInfo, error) {
-	var targetObjects []resourceInfo
 	namespace := target.Namespace
 	name := target.Name
 	policy := policyCtx.Policy()
@@ -91,10 +90,23 @@ func getTargets(ctx context.Context, client engineapi.Client, target kyvernov1.R
 		namespace = policy.GetNamespace()
 	}
 	group, version, kind, subresource := kubeutils.ParseKindSelector(target.APIVersion + "/" + target.Kind)
-	resources, err := client.GetResources(ctx, group, version, kind, subresource, namespace, name)
-	if err != nil {
-		return nil, err
+	var (
+		resources []engineapi.Resource
+		err       error
+	)
+	if target.Selector != nil {
+		resources, err = client.GetResourcesWithLabelSelector(ctx, group, version, kind, namespace, subresource, target.Selector)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		resources, err = client.GetResources(ctx, group, version, kind, subresource, namespace, name)
+		if err != nil {
+			return nil, err
+		}
 	}
+
+	targetObjects := make([]resourceInfo, 0, len(resources))
 	for _, resource := range resources {
 		targetObjects = append(targetObjects, resourceInfo{
 			unstructured: resource.Unstructured,

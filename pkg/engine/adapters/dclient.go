@@ -77,3 +77,59 @@ func (a *dclientAdapter) CanI(ctx context.Context, kind, namespace, verb, subres
 	}
 	return ok, reason, nil
 }
+
+func (a *dclientAdapter) GetResourcesWithLabelSelector(ctx context.Context, group, version, kind, namespace, subresource string, lselector *metav1.LabelSelector) ([]engineapi.Resource, error) {
+	var resources []engineapi.Resource
+	gvrss, err := a.client.Discovery().FindResources(group, version, kind, subresource)
+	if err != nil {
+		return nil, err
+	}
+
+	for gvrs := range gvrss {
+		dyn := a.client.GetDynamicInterface().Resource(gvrs.GroupVersionResource())
+		// if the api description says it has subresources add them to subresources
+		list, err := dyn.List(ctx, metav1.ListOptions{LabelSelector: lselector.String()})
+		if err != nil {
+			return nil, err
+		}
+
+		for _, obj := range list.Items {
+			resources = append(resources, engineapi.Resource{
+				Group:        gvrs.Group,
+				Version:      gvrs.Version,
+				Resource:     gvrs.Resource,
+				SubResource:  gvrs.SubResource,
+				Unstructured: obj,
+			})
+		}
+
+		// if the api description says this resource has subresources, fetch them and put them in the returned resource array
+		if gvrs.SubResource != "" {
+			for _, parent := range list.Items {
+				var (
+					obj *unstructured.Unstructured
+					err error
+				)
+
+				if parent.GetNamespace() == "" {
+					obj, err = dyn.Get(ctx, parent.GetName(), metav1.GetOptions{}, gvrs.SubResource)
+				} else {
+					obj, err = dyn.Namespace(parent.GetNamespace()).Get(ctx, parent.GetName(), metav1.GetOptions{}, gvrs.SubResource)
+				}
+
+				if err != nil {
+					return nil, err
+				}
+
+				resources = append(resources, engineapi.Resource{
+					Group:        gvrs.Group,
+					Version:      gvrs.Version,
+					Resource:     gvrs.Resource,
+					SubResource:  gvrs.SubResource,
+					Unstructured: *obj,
+				})
+			}
+		}
+	}
+	return resources, nil
+}

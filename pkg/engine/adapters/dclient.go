@@ -8,6 +8,7 @@ import (
 	"github.com/kyverno/kyverno/pkg/auth"
 	"github.com/kyverno/kyverno/pkg/clients/dclient"
 	engineapi "github.com/kyverno/kyverno/pkg/engine/api"
+	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -84,7 +85,7 @@ func (a *dclientAdapter) GetResourcesWithLabelSelector(ctx context.Context, grou
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("discovery completed")
+	logrus.Info("discovery completed")
 
 	for gvrs := range gvrss {
 		dyn := a.client.GetDynamicInterface().Resource(gvrs.GroupVersionResource())
@@ -95,7 +96,7 @@ func (a *dclientAdapter) GetResourcesWithLabelSelector(ctx context.Context, grou
 		}
 
 		for _, obj := range list.Items {
-			fmt.Println("got object:", obj.Object)
+			logrus.Info("got object:", obj.Object)
 			resources = append(resources, engineapi.Resource{
 				Group:        gvrs.Group,
 				Version:      gvrs.Version,
@@ -118,7 +119,7 @@ func (a *dclientAdapter) GetResourcesWithLabelSelector(ctx context.Context, grou
 				} else {
 					obj, err = dyn.Namespace(parent.GetNamespace()).Get(ctx, parent.GetName(), metav1.GetOptions{}, gvrs.SubResource)
 				}
-				fmt.Println("got subresources:", obj.Object)
+				logrus.Info("got subresources:", obj.Object)
 
 				if err != nil {
 					return nil, err

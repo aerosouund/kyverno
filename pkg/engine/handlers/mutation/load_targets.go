@@ -8,9 +8,9 @@ import (
 	kyvernov1 "github.com/kyverno/kyverno/api/kyverno/v1"
 	engineapi "github.com/kyverno/kyverno/pkg/engine/api"
 	"github.com/kyverno/kyverno/pkg/engine/variables"
+	"github.com/kyverno/kyverno/pkg/logging"
 	kubeutils "github.com/kyverno/kyverno/pkg/utils/kube"
 	"github.com/kyverno/kyverno/pkg/utils/wildcard"
-	"github.com/sirupsen/logrus"
 	"go.uber.org/multierr"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -86,6 +86,7 @@ func getTargets(ctx context.Context, client engineapi.Client, target kyvernov1.R
 	namespace := target.Namespace
 	name := target.Name
 	policy := policyCtx.Policy()
+	log := logging.WithName("ammar")
 	// if it's namespaced policy, targets has to be loaded only from the policy's namespace
 	if policy.IsNamespaced() {
 		namespace = policy.GetNamespace()
@@ -96,12 +97,12 @@ func getTargets(ctx context.Context, client engineapi.Client, target kyvernov1.R
 		err       error
 	)
 	if target.Selector != nil {
-		logrus.Info("getting targets with label selectors")
+		log.V(1).Info("getting targets with label selectors")
 		resources, err = client.GetResourcesWithLabelSelector(ctx, group, version, kind, namespace, subresource, target.Selector)
 		if err != nil {
 			return nil, err
 		}
-		logrus.Info("got resources: ", resources)
+		log.V(1).Info("got resources: ", resources)
 	} else {
 		resources, err = client.GetResources(ctx, group, version, kind, subresource, namespace, name)
 		if err != nil {

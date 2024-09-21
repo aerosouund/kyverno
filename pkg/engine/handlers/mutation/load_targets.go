@@ -95,10 +95,12 @@ func getTargets(ctx context.Context, client engineapi.Client, target kyvernov1.R
 		err       error
 	)
 	if target.Selector != nil {
+		fmt.Println("getting targets with label selectors")
 		resources, err = client.GetResourcesWithLabelSelector(ctx, group, version, kind, namespace, subresource, target.Selector)
 		if err != nil {
 			return nil, err
 		}
+		fmt.Println("got resources: ", resources)
 	} else {
 		resources, err = client.GetResources(ctx, group, version, kind, subresource, namespace, name)
 		if err != nil {

@@ -84,6 +84,7 @@ func (a *dclientAdapter) GetResourcesWithLabelSelector(ctx context.Context, grou
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("discovery completed")
 
 	for gvrs := range gvrss {
 		dyn := a.client.GetDynamicInterface().Resource(gvrs.GroupVersionResource())
@@ -94,6 +95,7 @@ func (a *dclientAdapter) GetResourcesWithLabelSelector(ctx context.Context, grou
 		}
 
 		for _, obj := range list.Items {
+			fmt.Println("got object:", obj.Object)
 			resources = append(resources, engineapi.Resource{
 				Group:        gvrs.Group,
 				Version:      gvrs.Version,
@@ -116,6 +118,7 @@ func (a *dclientAdapter) GetResourcesWithLabelSelector(ctx context.Context, grou
 				} else {
 					obj, err = dyn.Namespace(parent.GetNamespace()).Get(ctx, parent.GetName(), metav1.GetOptions{}, gvrs.SubResource)
 				}
+				fmt.Println("got subresources:", obj.Object)
 
 				if err != nil {
 					return nil, err

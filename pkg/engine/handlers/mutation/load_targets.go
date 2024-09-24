@@ -8,7 +8,6 @@ import (
 	kyvernov1 "github.com/kyverno/kyverno/api/kyverno/v1"
 	engineapi "github.com/kyverno/kyverno/pkg/engine/api"
 	"github.com/kyverno/kyverno/pkg/engine/variables"
-	"github.com/kyverno/kyverno/pkg/logging"
 	kubeutils "github.com/kyverno/kyverno/pkg/utils/kube"
 	"github.com/kyverno/kyverno/pkg/utils/wildcard"
 	"go.uber.org/multierr"
@@ -86,28 +85,14 @@ func getTargets(ctx context.Context, client engineapi.Client, target kyvernov1.R
 	namespace := target.Namespace
 	name := target.Name
 	policy := policyCtx.Policy()
-	log := logging.WithName("ammar")
 	// if it's namespaced policy, targets has to be loaded only from the policy's namespace
 	if policy.IsNamespaced() {
 		namespace = policy.GetNamespace()
 	}
 	group, version, kind, subresource := kubeutils.ParseKindSelector(target.APIVersion + "/" + target.Kind)
-	var (
-		resources []engineapi.Resource
-		err       error
-	)
-	if target.Selector != nil {
-		log.V(1).Info("getting targets with label selectors")
-		resources, err = client.GetResourcesWithLabelSelector(ctx, group, version, kind, namespace, subresource, target.Selector)
-		if err != nil {
-			return nil, err
-		}
-		log.V(1).Info("got resources: ", resources)
-	} else {
-		resources, err = client.GetResources(ctx, group, version, kind, subresource, namespace, name)
-		if err != nil {
-			return nil, err
-		}
+	resources, err := client.GetResources(ctx, group, version, kind, subresource, namespace, name, target.Selector)
+	if err != nil {
+		return nil, err
 	}
 
 	targetObjects := make([]resourceInfo, 0, len(resources))

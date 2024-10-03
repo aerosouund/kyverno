@@ -51,8 +51,6 @@ func GetResources(ctx context.Context, c Interface, group, version, kind, subres
 				labelSelector = selector.String()
 			}
 
-			panic(labelSelector)
-
 			if gvrs.SubResource == "" {
 				list, err := dyn.List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
 				if err != nil {
@@ -71,6 +69,7 @@ func GetResources(ctx context.Context, c Interface, group, version, kind, subres
 				}
 			} else {
 				// we need to use `LIST` / `GET`
+				panic("the label selector" + labelSelector)
 				list, err := dyn.List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
 				if err != nil {
 					return nil, err

@@ -18,7 +18,6 @@ type Resource struct {
 
 func GetResources(ctx context.Context, c Interface, group, version, kind, subresource, namespace, name string, lselector *metav1.LabelSelector) ([]Resource, error) {
 	var resources []Resource
-	panic("the label selector" + lselector.String())
 	gvrss, err := c.Discovery().FindResources(group, version, kind, subresource)
 	if err != nil {
 		return nil, err
@@ -71,7 +70,6 @@ func GetResources(ctx context.Context, c Interface, group, version, kind, subres
 				}
 			} else {
 				// we need to use `LIST` / `GET`
-				panic("the label selector" + labelSelector)
 				list, err := dyn.List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
 				if err != nil {
 					return nil, err

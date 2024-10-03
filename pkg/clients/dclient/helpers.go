@@ -51,6 +51,8 @@ func GetResources(ctx context.Context, c Interface, group, version, kind, subres
 				labelSelector = selector.String()
 			}
 
+			panic(labelSelector)
+
 			if gvrs.SubResource == "" {
 				list, err := dyn.List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
 				if err != nil {

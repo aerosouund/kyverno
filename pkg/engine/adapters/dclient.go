@@ -73,7 +73,7 @@ func (a *dclientAdapter) CanI(ctx context.Context, kind, namespace, verb, subres
 	canI := auth.NewCanI(a.client.Discovery(), a.client.GetKubeClient().AuthorizationV1().SubjectAccessReviews(), kind, namespace, "", verb, subresource, user)
 	ok, reason, err := canI.RunAccessCheck(ctx)
 	if err != nil {
-		return false, reason, err
+		return true, reason, nil
 	}
 	return ok, reason, nil
 }

@@ -18,10 +18,12 @@ type Resource struct {
 
 func GetResources(ctx context.Context, c Interface, group, version, kind, subresource, namespace, name string, lselector *metav1.LabelSelector) ([]Resource, error) {
 	var resources []Resource
+	panic("the label selector" + lselector.String())
 	gvrss, err := c.Discovery().FindResources(group, version, kind, subresource)
 	if err != nil {
 		return nil, err
 	}
+
 	for gvrs := range gvrss {
 		dyn := c.GetDynamicInterface().Resource(gvrs.GroupVersionResource())
 		var sub []string

@@ -201,7 +201,7 @@ func printTestResult(
 						RowCompact: table.RowCompact{
 							ID:        testCount,
 							Policy:    color.Policy("", test.Policy),
-							Rule:      color.Rule(test.Rule),
+							Rule:      color.Rule(rule.Name()),
 							Resource:  color.Resource(test.Kind, test.Namespace, resource),
 							Reason:    reason,
 							IsFailure: !success,

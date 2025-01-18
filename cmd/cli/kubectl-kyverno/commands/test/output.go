@@ -247,8 +247,10 @@ func printTestResult(
 					} else {
 						rulesToCheck = append(rulesToCheck, lookupRuleResponses(test, response.PolicyResponse.Rules...)...)
 					}
+					ruleName := ""
 					for _, rule := range rulesToCheck {
 						r := response.Resource
+						ruleName = rule.Name()
 
 						if test.IsValidatingAdmissionPolicy {
 							ok, message, reason := checkResult(test, fs, resoucePath, response, rule, r)
@@ -257,7 +259,7 @@ func printTestResult(
 								continue
 							}
 
-							resourceRows := createRowsAccordingToResults(test, rc, &testCount, ok, message, reason, strings.Replace(resource, ",", "/", -1))
+							resourceRows := createRowsAccordingToResults(test, rc, &testCount, rule.Name(), ok, message, reason, strings.Replace(resource, ",", "/", -1))
 							rows = append(rows, resourceRows...)
 							continue
 						}
@@ -294,7 +296,7 @@ func printTestResult(
 							RowCompact: table.RowCompact{
 								ID:        testCount,
 								Policy:    color.Policy("", test.Policy),
-								Rule:      color.Rule(""),
+								Rule:      color.Rule(ruleName),
 								Resource:  color.Resource(test.Kind, test.Namespace, strings.Replace(resource, ",", "/", -1)),
 								Result:    color.ResultPass(),
 								Reason:    color.Excluded(),

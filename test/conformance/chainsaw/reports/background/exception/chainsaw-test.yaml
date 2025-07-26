@@ -30,5 +30,7 @@ spec:
         file: exception.yaml
   - name: step-04
     try:
+    - sleep:
+        duration: 100s
     - assert:
         file: report-assert.yaml

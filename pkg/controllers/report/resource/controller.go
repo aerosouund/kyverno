@@ -166,6 +166,7 @@ func (c *controller) AddEventHandler(eventHandler EventHandler) {
 
 func (c *controller) startWatcher(ctx context.Context, logger logr.Logger, gvr schema.GroupVersionResource, gvk schema.GroupVersionKind) (*watcher, error) {
 	hashes := map[types.UID]Resource{}
+	logger.Info("starting watcher for kind ", gvr.Group, gvr.Resource)
 	objs, err := c.client.GetDynamicInterface().Resource(gvr).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		logger.Error(err, "failed to list resources")

@@ -219,8 +219,7 @@ func (c *controller) deleting(ctx context.Context, logger logr.Logger, ePolicy e
 			}
 
 			if !engineResult.Match {
-				debug.Error(err, "policy did not match match")
-				errs = append(errs, err)
+				debug.Error(err, "policy did not match resource")
 				continue
 			}
 

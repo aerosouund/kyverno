@@ -20,14 +20,6 @@ spec:
         bindings:
         - name: name
           value: add-env-label
-  - name: create test namespace
-    try:
-    - create:
-        resource:
-          apiVersion: v1
-          kind: Namespace
-          metadata:
-            name: test-context-get
   - name: create configmap
     try:
     - create:

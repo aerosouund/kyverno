@@ -17,6 +17,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/managedfields"
 	admission "k8s.io/apiserver/pkg/admission"
 	plugincel "k8s.io/apiserver/pkg/admission/plugin/cel"
 	"k8s.io/apiserver/pkg/admission/plugin/policy/mutating"
@@ -203,7 +204,8 @@ func (p *Policy) Evaluate(
 			ObjectInterfaces:    o,
 			OptionalVariables:   plugincel.OptionalVariableBindings{VersionedParams: nil, Authorizer: nil},
 			Namespace:           namespace,
-			TypeConverter:       tcm.GetTypeConverter(versionedAttributes.VersionedKind),
+			TypeConverter:       managedfields.NewDeducedTypeConverter(),
+			//TypeConverter:       tcm.GetTypeConverter(versionedAttributes.VersionedKind),
 		}
 
 		newVersionedObject, err := patcher.Patch(compositionCtx, patchRequest, celconfig.RuntimeCELCostBudget)

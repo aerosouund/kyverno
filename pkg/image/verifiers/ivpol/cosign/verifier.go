@@ -12,6 +12,7 @@ import (
 	"github.com/sigstore/cosign/v3/pkg/cosign"
 	"github.com/sigstore/cosign/v3/pkg/oci"
 	"github.com/sigstore/cosign/v3/pkg/policy"
+	sgbundle "github.com/sigstore/sigstore-go/pkg/bundle"
 	"github.com/sigstore/sigstore-go/pkg/root"
 	corev1listers "k8s.io/client-go/listers/core/v1"
 )
@@ -28,11 +29,12 @@ func NewVerifier(secretLister corev1listers.SecretLister, logger logr.Logger) *V
 	}
 }
 
-// buildCheckOptsWithBundleDetection builds CheckOpts and auto-detects cosign v3 bundle format
-func (v *Verifier) buildCheckOptsWithBundleDetection(ctx context.Context, attestor *policiesv1beta1.Cosign, image *imagedataloader.ImageData) (*cosign.CheckOpts, error) {
+// buildCheckOptsWithBundleDetection builds CheckOpts and auto-detects cosign v3 bundle format and returns
+// any found cosign v3 bundles
+func (v *Verifier) buildCheckOptsWithBundleDetection(ctx context.Context, attestor *policiesv1beta1.Cosign, image *imagedataloader.ImageData) (*cosign.CheckOpts, []*sgbundle.Bundle, error) {
 	cOpts, err := checkOptions(ctx, attestor, image.RemoteOpts(), image.NameOpts(), v.secretLister)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Auto-detect if new bundle format (cosign v3) is actually present
@@ -43,7 +45,7 @@ func (v *Verifier) buildCheckOptsWithBundleDetection(ctx context.Context, attest
 		cOpts.UseSignedTimestamps = true
 	}
 
-	return cOpts, nil
+	return cOpts, newBundles, nil
 }
 
 // shouldUseSignedTimestamps reports whether a detected Sigstore bundle (format
@@ -76,7 +78,7 @@ func (v *Verifier) VerifyImageSignature(ctx context.Context, image *imagedataloa
 	logger := v.log.WithValues("image", image.Image, "digest", image.Digest, "attestor", attestor.Name)
 	logger.V(2).Info("verifying cosign image signature", "image", image.Image)
 
-	cOpts, err := v.buildCheckOptsWithBundleDetection(ctx, attestor.Cosign, image)
+	cOpts, newBundles, err := v.buildCheckOptsWithBundleDetection(ctx, attestor.Cosign, image)
 	if err != nil {
 		err := errors.Wrapf(err, "failed to build cosign verification opts")
 		logger.Error(err, "image verification failed")
@@ -115,25 +117,28 @@ func (v *Verifier) VerifyImageSignature(ctx context.Context, image *imagedataloa
 		return err
 	}
 
-	bundles, _, err := cosign.GetBundles(ctx, image.NameRef(), cOpts.RegistryClientOpts, image.NameOpts()...)
-	if err != nil {
-		return err
-	}
-	for _, b := range bundles {
-		dsse := b.GetDsseEnvelope()
-		_ = dsse
-	}
-	_ = bundles
-
 	if len(attestor.Cosign.Annotations) != 0 {
 		var annotationErrors []error
-		for _, sig := range sigs {
-			if err := checkSignatureAnnotations(sig, attestor.Cosign.Annotations); err != nil {
-				annotationErrors = append(annotationErrors, err)
-				continue
+		if len(newBundles) == 0 {
+			// we don't cosign v3 bundles, check signatures with a function that expects the old format
+			for _, sig := range sigs {
+				if err := checkSignatureAnnotationsV2(sig, attestor.Cosign.Annotations); err != nil {
+					annotationErrors = append(annotationErrors, err)
+					continue
+				}
+				return nil
 			}
-			return nil
+		} else {
+			for _, b := range newBundles {
+				if err := checkSignatureAnnotationsV3(b, attestor.Cosign.Annotations); err != nil {
+					annotationErrors = append(annotationErrors, err)
+					continue
+				}
+				return nil
+			}
+
 		}
+
 		err := fmt.Errorf("no signature matched the required annotations: %v", annotationErrors)
 		logger.Error(err, "image verification failed")
 		return err
@@ -153,7 +158,7 @@ func (v *Verifier) VerifyAttestationSignature(ctx context.Context, image *imaged
 	logger := v.log.WithValues("image", image.Image, "digest", image.Digest, "attestation", attestation.Name, "attestor", attestor.Name)
 	logger.V(2).Info("verifying cosign attestation signature", "image", image.Image)
 
-	cOpts, err := v.buildCheckOptsWithBundleDetection(ctx, attestor.Cosign, image)
+	cOpts, _, err := v.buildCheckOptsWithBundleDetection(ctx, attestor.Cosign, image)
 	if err != nil {
 		err := errors.Wrapf(err, "failed to build cosign verification opts")
 		logger.Error(err, "image verification failed")
@@ -189,7 +194,7 @@ func (v *Verifier) VerifyAttestationSignature(ctx context.Context, image *imaged
 		}
 
 		if len(attestor.Cosign.Annotations) != 0 {
-			if err := checkSignatureAnnotations(s, attestor.Cosign.Annotations); err != nil {
+			if err := checkSignatureAnnotationsV2(s, attestor.Cosign.Annotations); err != nil {
 				annotationErrors = append(annotationErrors, err)
 				continue
 			}

@@ -5,11 +5,15 @@ import (
 	"crypto"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 
 	"github.com/sigstore/cosign/v3/pkg/oci"
+	"github.com/sigstore/sigstore-go/pkg/bundle"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/sigstore/sigstore/pkg/signature"
+
+	"github.com/sigstore/sigstore/pkg/signature/payload"
 )
 
 var signatureAlgorithmMap = map[string]crypto.Hash{
@@ -86,24 +90,48 @@ func decodePEM(raw []byte, signatureAlgorithm crypto.Hash) (signature.Verifier, 
 	return signature.LoadVerifier(pubKey, signatureAlgorithm)
 }
 
-// checkSignatureAnnotations verifies the required annotations against the
-// optional annotations carried in the cosign signature payload. cosign
-// populates the payload's "optional" map via `cosign sign -a`, so this matches
-// the semantics of the ClusterPolicy cosign verifier's checkAnnotations. The
-// previous implementation compared against the signature's OCI descriptor
-// annotations (oci.Signature.Annotations()), which are a different concept and
-// are not populated by `cosign sign -a`.
-func checkSignatureAnnotations(sig oci.Signature, annotations map[string]string) error {
+func checkSignatureAnnotationsV3(b *bundle.Bundle, annotations map[string]string) error {
+	dsse := b.GetDsseEnvelope()
+	if dsse != nil {
+		return fmt.Errorf("invalid v3 bundle, doesn't contain a DSSE envelope at the top level")
+	}
+
+	var statement struct {
+		Subject []struct {
+			Annotations map[string]string `json:"annotations"`
+		} `json:"subject"`
+	}
+
+	if err := json.Unmarshal(dsse.Payload, &statement); err != nil {
+		return fmt.Errorf("failed to decode signature payload: %w", err)
+	}
+
+	for _, subj := range statement.Subject {
+		for key, val := range annotations {
+			if val != subj.Annotations[key] {
+				return fmt.Errorf("annotations mismatch: %s does not match expected value %s for key %s",
+					subj.Annotations[key], val, key)
+			}
+		}
+	}
+	return nil
+}
+
+func checkSignatureAnnotationsV2(sig oci.Signature, annotations map[string]string) error {
 	pld, err := sig.Payload()
 	if err != nil {
 		return fmt.Errorf("failed to get signature payload: %w", err)
 	}
 
-	sigString := string(pld)
+	sci := payload.SimpleContainerImage{}
+	if err := json.Unmarshal(pld, &sci); err != nil {
+		return fmt.Errorf("failed to decode signature payload: %w", err)
+	}
 
-	for _, val := range annotations {
-		if val != sigString {
-			return nil
+	for key, val := range annotations {
+		if val != sci.Optional[key] {
+			return fmt.Errorf("annotations mismatch: %s does not match expected value %s for key %s",
+				sci.Optional[key], val, key)
 		}
 	}
 	return nil

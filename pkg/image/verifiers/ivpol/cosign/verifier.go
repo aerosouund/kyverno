@@ -115,6 +115,16 @@ func (v *Verifier) VerifyImageSignature(ctx context.Context, image *imagedataloa
 		return err
 	}
 
+	bundles, _, err := cosign.GetBundles(ctx, image.NameRef(), cOpts.RegistryClientOpts, image.NameOpts()...)
+	if err != nil {
+		return err
+	}
+	for _, b := range bundles {
+		dsse := b.GetDsseEnvelope()
+		_ = dsse
+	}
+	_ = bundles
+
 	if len(attestor.Cosign.Annotations) != 0 {
 		var annotationErrors []error
 		for _, sig := range sigs {

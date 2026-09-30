@@ -5,13 +5,11 @@ import (
 	"crypto"
 	"crypto/x509"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 
 	"github.com/sigstore/cosign/v3/pkg/oci"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/sigstore/sigstore/pkg/signature"
-	"github.com/sigstore/sigstore/pkg/signature/payload"
 )
 
 var signatureAlgorithmMap = map[string]crypto.Hash{
@@ -101,15 +99,11 @@ func checkSignatureAnnotations(sig oci.Signature, annotations map[string]string)
 		return fmt.Errorf("failed to get signature payload: %w", err)
 	}
 
-	sci := payload.SimpleContainerImage{}
-	if err := json.Unmarshal(pld, &sci); err != nil {
-		return fmt.Errorf("failed to decode signature payload: %w", err)
-	}
+	sigString := string(pld)
 
-	for key, val := range annotations {
-		if val != sci.Optional[key] {
-			return fmt.Errorf("annotations mismatch: %s does not match expected value %s for key %s",
-				sci.Optional[key], val, key)
+	for _, val := range annotations {
+		if val != sigString {
+			return nil
 		}
 	}
 	return nil

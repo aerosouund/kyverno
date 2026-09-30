@@ -136,7 +136,6 @@ func (v *Verifier) VerifyImageSignature(ctx context.Context, image *imagedataloa
 				}
 				return nil
 			}
-
 		}
 
 		err := fmt.Errorf("no signature matched the required annotations: %v", annotationErrors)

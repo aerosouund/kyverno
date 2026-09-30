@@ -91,7 +91,7 @@ func decodePEM(raw []byte, signatureAlgorithm crypto.Hash) (signature.Verifier, 
 }
 
 func checkSignatureAnnotationsV3(b *bundle.Bundle, annotations map[string]string) error {
-	dsse := b.GetDsseEnvelope()
+	dsse := b.Bundle.GetDsseEnvelope()
 	if dsse != nil {
 		return fmt.Errorf("invalid v3 bundle, doesn't contain a DSSE envelope at the top level")
 	}
